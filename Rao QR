@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator and Scanner - Faizan Rao</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #qr-code {
+            margin-top: 20px;
+        }
+
+        /* Styling for the Camera icon button */
+        #camera-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #28a745;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+        }
+
+        #camera-btn:hover {
+            background-color: #218838;
+        }
+
+        #qr-scanner {
+            display: none;
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            width: 300px;
+            height: 300px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+
+        #decoded-text {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        <input type="text" id="qr-input" placeholder="Enter text or URL" />
+        <button onclick="generateQRCode()">Generate QR Code</button>
+        <div id="qr-code"></div>
+        <div id="decoded-text"></div>
+    </div>
+
+    <!-- Camera Icon Button to open the scanner -->
+    <button id="camera-btn" onclick="toggleScanner()">📷</button>
+
+    <!-- QR Code Scanner (Initially hidden) -->
+    <div id="qr-scanner"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script>
+        // QR Code Generator
+        function generateQRCode() {
+            var input = document.getElementById("qr-input").value;
+            if (input.trim() !== "") {
+                // Clear any previous QR code
+                document.getElementById("qr-code").innerHTML = "";
+                // Generate QR code
+                QRCode.toDataURL(input, function (error, url) {
+                    if (error) {
+                        console.error(error);
+                    } else {
+                        // Display the QR code as an image
+                        var img = document.createElement("img");
+                        img.src = url;
+                        img.alt = "QR Code";
+                        document.getElementById("qr-code").appendChild(img);
+                    }
+                });
+            } else {
+                alert("Please enter some text or URL to generate QR code!");
+            }
+        }
+
+        // Function to toggle the scanner visibility
+        function toggleScanner() {
+            var scannerElement = document.getElementById("qr-scanner");
+            if (scannerElement.style.display === "none" || scannerElement.style.display === "") {
+                scannerElement.style.display = "block";
+                startScanner(); // Start the scanner when visible
+            } else {
+                scannerElement.style.display = "none";
+                stopScanner(); // Stop the scanner when hidden
+            }
+        }
+
+        // QR Code Scanner
+        function startScanner() {
+            console.log("Starting the scanner...");
+            // Request permission to use the camera
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function (stream) {
+                    console.log("Camera permission granted");
+                    // Start the scanner if permission is granted
+                    const scanner = new Html5QrcodeScanner("qr-scanner", {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 }
+                    });
+
+                    scanner.render(onScanSuccess, onScanError);
+                })
+                .catch(function (error) {
+                    console.error("Error accessing camera: ", error);
+                    alert("Camera permission is required to scan QR codes. Please allow camera access.");
+                });
+        }
+
+        // Stop the scanner when it's no longer needed
+        function stopScanner() {
+            console.log("Stopping the scanner...");
+            Html5QrcodeScanner.stop();
+        }
+
+        // Handle successful scan
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log("Scan successful:", decodedText);
+            // Show the decoded text on the page
+            document.getElementById("decoded-text").innerHTML = `Decoded QR Code: <b>${decodedText}</b>`;
+            // Optionally, close the scanner after successful scan
+            stopScanner();
+            document.getElementById("qr-scanner").style.display = "none";
+        }
+
+        // Handle scan errors
+        function onScanError(errorMessage) {
+            console.error("Scan error:", errorMessage);
+        }
+    </script>
+
+</body>
+</html>
